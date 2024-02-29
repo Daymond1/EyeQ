@@ -135,13 +135,11 @@ namespace EyeQ
             var result = reader.Decode(screenshot);
             if (result != null)
             {
-                // Виклик Form1.ShowNotification для відображення нотифікації про виявлений QR-код
                 Form1.ShowNotification("QR Code Detected", "QR Code content copied to clipboard: " + result.Text);
                 Clipboard.SetText(result.Text);
             }
             else
             {
-                // Виклик Form1.ShowNotification, якщо QR-код не виявлено
                 Form1.ShowNotification("QR Code Not Found", "No QR code was found in the selected area.");
             }
         }

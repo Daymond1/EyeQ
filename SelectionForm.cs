@@ -3,12 +3,7 @@ using System.Drawing;
 using System.Windows.Forms;
 using System.Runtime.InteropServices;
 using ZXing;
-using System.Drawing.Drawing2D;
-using System.Windows.Forms.VisualStyles;
-using ToastNotifications.Core;
-using ToastNotifications;
-using ToastNotifications.Position;
-using System.IO;
+using System.IO; // Ensure ZXing is properly referenced for QR code functionality
 
 namespace EyeQ
 {
@@ -16,12 +11,6 @@ namespace EyeQ
     {
         [DllImport("user32.dll")]
         public static extern IntPtr GetDC(IntPtr hwnd);
-
-        [DllImport("user32.dll")]
-        public static extern IntPtr GetWindowDC(IntPtr ptr);
-
-        [DllImport("user32.dll")]
-        public static extern IntPtr GetDesktopWindow();
 
         [DllImport("gdi32.dll")]
         public static extern IntPtr CreateCompatibleDC(IntPtr dc);
@@ -33,7 +22,6 @@ namespace EyeQ
         public static extern IntPtr SelectObject(IntPtr dc, IntPtr obj);
 
         [DllImport("gdi32.dll")]
-        [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool BitBlt(IntPtr dcDest, int xDest, int yDest, int width, int height, IntPtr dcSrc, int xSrc, int ySrc, uint rop);
 
         [DllImport("gdi32.dll")]
@@ -49,31 +37,29 @@ namespace EyeQ
 
         public static Bitmap CaptureScreen(Rectangle bounds)
         {
-            IntPtr desktopPtr = GetDesktopWindow();
-            IntPtr desktopDC = GetDC(desktopPtr);
-            IntPtr compatibleDC = CreateCompatibleDC(desktopDC);
-            IntPtr compatibleBitmap = CreateCompatibleBitmap(desktopDC, bounds.Width, bounds.Height);
-            IntPtr oldBitmap = SelectObject(compatibleDC, compatibleBitmap);
+            IntPtr desktopDC = GetDC(IntPtr.Zero);
+            IntPtr memDC = CreateCompatibleDC(desktopDC);
+            IntPtr hBitmap = CreateCompatibleBitmap(desktopDC, bounds.Width, bounds.Height);
+            IntPtr oldBitmap = SelectObject(memDC, hBitmap);
 
-            BitBlt(compatibleDC, 0, 0, bounds.Width, bounds.Height, desktopDC, bounds.X, bounds.Y, SRCCOPY);
+            BitBlt(memDC, 0, 0, bounds.Width, bounds.Height, desktopDC, bounds.X, bounds.Y, SRCCOPY);
+            SelectObject(memDC, oldBitmap);
 
-            Bitmap bitmap = Image.FromHbitmap(compatibleBitmap);
+            Bitmap bmp = Image.FromHbitmap(hBitmap);
+            DeleteObject(hBitmap);
+            ReleaseDC(IntPtr.Zero, desktopDC);
+            DeleteDC(memDC);
 
-            // Clean up
-            SelectObject(compatibleDC, oldBitmap);
-            DeleteObject(compatibleBitmap);
-            DeleteDC(compatibleDC);
-            ReleaseDC(desktopPtr, desktopDC);
-
-            return bitmap;
+            return bmp;
         }
     }
 
     public class SelectionForm : Form
     {
-        public Rectangle SelectedArea { get; private set; }
-
-        private readonly NotifyIcon _notifyIcon;
+        private Rectangle selectedArea;
+        private Point startPoint;
+        private static NotifyIcon trayIcon;
+        private bool isSelecting;
 
         public SelectionForm()
         {
@@ -85,47 +71,44 @@ namespace EyeQ
             this.Opacity = 0.3;
             this.Cursor = Cursors.Cross;
 
-            _notifyIcon = new NotifyIcon();
-            _notifyIcon.Visible = true;
-
-            string appDirectory = Path.GetDirectoryName(Application.ExecutablePath);
-
-            string iconPath = Path.Combine(appDirectory, "ico.ico");
-
-            if (File.Exists(iconPath))
-            {
-                Icon appIcon = new Icon(iconPath);
-                _notifyIcon.Icon = appIcon;
-            }
-            else
-            {
-                _notifyIcon.Icon = SystemIcons.Information;
-            }
-
-
+            InitializeTrayIcon();
         }
 
-        private Point start;
-        private float scalingFactor;
+        private void InitializeTrayIcon()
+        {
+            if (trayIcon == null)
+            {
+                trayIcon = new NotifyIcon
+                {
+                    Visible = true,
+                    Icon = SystemIcons.Application,
+                    Text = "EyeQ"
+                };
+            }
+        }
 
         protected override void OnMouseDown(MouseEventArgs e)
         {
             base.OnMouseDown(e);
-            start = e.Location;
-            scalingFactor = GetScalingFactor();
-            SelectedArea = new Rectangle((int)(e.X / scalingFactor), (int)(e.Y / scalingFactor), 0, 0);
+            if (e.Button == MouseButtons.Left)
+            {
+                startPoint = e.Location;
+                isSelecting = true;
+                selectedArea = new Rectangle(e.Location, new Size());
+            }
         }
 
         protected override void OnMouseMove(MouseEventArgs e)
         {
             base.OnMouseMove(e);
-            if (e.Button == MouseButtons.Left)
+            if (isSelecting)
             {
-                SelectedArea = new Rectangle(
-                    Math.Min((int)(start.X / scalingFactor), (int)(e.X / scalingFactor)),
-                    Math.Min((int)(start.Y / scalingFactor), (int)(e.Y / scalingFactor)),
-                    Math.Abs((int)((e.X - start.X) / scalingFactor)),
-                    Math.Abs((int)((e.Y - start.Y) / scalingFactor)));
+                selectedArea = new Rectangle(
+                    Math.Min(startPoint.X, e.X),
+                    Math.Min(startPoint.Y, e.Y),
+                    Math.Abs(e.X - startPoint.X),
+                    Math.Abs(e.Y - startPoint.Y));
+
                 this.Invalidate();
             }
         }
@@ -133,19 +116,15 @@ namespace EyeQ
         protected override void OnMouseUp(MouseEventArgs e)
         {
             base.OnMouseUp(e);
-            if (SelectedArea.Width > 0 && SelectedArea.Height > 0)
+            if (selectedArea.Width > 0 && selectedArea.Height > 0)
             {
-                this.DialogResult = DialogResult.OK;
-
-                Bitmap screenshot = ScreenCapture.CaptureScreen(new Rectangle((int)(SelectedArea.X * scalingFactor), (int)(SelectedArea.Y * scalingFactor), (int)(SelectedArea.Width * scalingFactor), (int)(SelectedArea.Height * scalingFactor)));
-
-                screenshot.Save("screenshot.png", System.Drawing.Imaging.ImageFormat.Png);
+                Bitmap screenshot = ScreenCapture.CaptureScreen(selectedArea);
+                string filePath = Path.Combine(Application.StartupPath, "screenshot.png");
+                screenshot.Save(filePath, System.Drawing.Imaging.ImageFormat.Png);
 
                 AnalyzeScreenshotForQRCode(screenshot);
-            }
-            else
-            {
-                this.DialogResult = DialogResult.Cancel;
+
+                screenshot.Dispose();
             }
             this.Close();
         }
@@ -156,50 +135,37 @@ namespace EyeQ
             var result = reader.Decode(screenshot);
             if (result != null)
             {
-                ShowToastNotification("QR Code detected and copied to clipboard", result.Text);
+                // Виклик Form1.ShowNotification для відображення нотифікації про виявлений QR-код
+                Form1.ShowNotification("QR Code Detected", "QR Code content copied to clipboard: " + result.Text);
+                Clipboard.SetText(result.Text);
             }
             else
             {
-                ShowToastNotification("QR Code Not Found", "No QR code was found in the selected area.");
+                // Виклик Form1.ShowNotification, якщо QR-код не виявлено
+                Form1.ShowNotification("QR Code Not Found", "No QR code was found in the selected area.");
             }
-            screenshot.Dispose();
-        }
-
-        private void ShowToastNotification(string title, string message)
-        {
-           
-
-            _notifyIcon.ShowBalloonTip(5000, title, message, ToolTipIcon.None);
-
-            Clipboard.SetText(message);
         }
 
 
         protected override void OnPaint(PaintEventArgs e)
         {
             base.OnPaint(e);
-
-            GraphicsPath path = new GraphicsPath();
-            path.AddRectangle(this.ClientRectangle);
-
-            if (SelectedArea.Width > 0 && SelectedArea.Height > 0)
+            if (isSelecting)
             {
-                path.AddRectangle(new RectangleF(SelectedArea.X * scalingFactor, SelectedArea.Y * scalingFactor, SelectedArea.Width * scalingFactor, SelectedArea.Height * scalingFactor));
+                using (Pen pen = new Pen(Color.Red, 2))
+                {
+                    e.Graphics.DrawRectangle(pen, selectedArea);
+                }
             }
-
-            Region region = new Region(path);
-            this.Region = region;
-
-            e.Graphics.FillRectangle(new SolidBrush(Color.FromArgb(128, 0, 0, 0)), this.ClientRectangle);
-
-            this.Region = new Region(this.ClientRectangle);
         }
 
-        private float GetScalingFactor()
+        protected override void OnFormClosed(FormClosedEventArgs e)
         {
-            using (Graphics graphics = this.CreateGraphics())
+            base.OnFormClosed(e);
+            if (trayIcon != null)
             {
-                return graphics.DpiX / 96f;
+                trayIcon.Visible = false;
+                trayIcon.Dispose();
             }
         }
     }

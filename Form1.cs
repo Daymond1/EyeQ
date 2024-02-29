@@ -23,7 +23,7 @@ namespace EyeQ
 
             trayIcon = new NotifyIcon();
             trayIcon.Text = "EyeQ";
-            trayIcon.Icon = new Icon(Path.Combine(Application.StartupPath, "ico.ico"), 16, 16);
+            trayIcon.Icon = new Icon("ico.ico");
 
             trayIcon.ContextMenuStrip = trayMenu;
             trayIcon.Visible = true;

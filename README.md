@@ -19,7 +19,7 @@ EyeQ is a simple application that allows you to capture a selected area of your 
 ## Usage
 
 1. Right-click on the EyeQ icon in the system tray to access the context menu.
-2. Select "Capture Screen" to start capturing a selected area of the screen.
+2. Click the left mouse button to start capturing the area.
 3. Once you've selected the desired area, release the mouse button to capture the screenshot.
 4. If a QR code is detected in the captured area, a notification will be displayed with the decoded text.
 5. You can also manually add or remove the application from autorun by selecting the corresponding option in the context menu.

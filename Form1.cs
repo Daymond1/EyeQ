@@ -1,5 +1,6 @@
 ﻿using Microsoft.Win32;
 using System;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Windows.Forms;
@@ -16,6 +17,14 @@ namespace EyeQ
         public Form1()
         {
             InitializeComponent();
+
+            if (IsAlreadyRunning())
+            {
+                MessageBox.Show("EyeQ is already running.", "EyeQ", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                Application.Exit();
+                return;
+            }
+
 
             trayMenu = new ContextMenuStrip();
             trayMenu.Items.Add("Add/Remove to autorun", null, AddToStartupMenuItem_Click);
@@ -112,5 +121,15 @@ namespace EyeQ
                 MessageBox.Show($"Could not change the autorun: {ex.Message}");
             }
         }
+
+
+        // Check if another instance of the application is already running
+        private bool IsAlreadyRunning()
+        {
+            Process currentProcess = Process.GetCurrentProcess();
+            Process[] processes = Process.GetProcessesByName(currentProcess.ProcessName);
+            return processes.Length > 1;
+        }
     }
+
 }

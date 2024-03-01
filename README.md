@@ -13,7 +13,7 @@ EyeQ is a simple application that allows you to capture a selected area of your 
 ## Installation
 
 1. Use installer EyeQ.msi
-   OR
+OR
 2.1. Clone the repository to your local machine.
 2.2. Build the solution using Visual Studio or any other compatible IDE.
 2.3. Run the compiled executable file (EyeQ.exe) to launch the application.

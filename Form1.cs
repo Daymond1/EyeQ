@@ -37,7 +37,7 @@ namespace EyeQ
                 trayIcon = new NotifyIcon
                 {
                     Text = AppName,
-                    Icon = new Icon("ico.ico"), // Ensure this icon exists in your project resources
+                    Icon = new Icon(Path.Combine(Application.StartupPath, "ico.ico")), //fixed
                     ContextMenuStrip = trayMenu,
                     Visible = true
                 };
@@ -151,5 +151,9 @@ namespace EyeQ
             Application.Exit();
         }
 
+        private void Form1_Load(object sender, EventArgs e)
+        {
+
+        }
     }
 }

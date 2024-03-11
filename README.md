@@ -16,7 +16,7 @@ There are two main methods to install the application:
 
 ### Method 1: Using the [Installer](https://github.com/Daymond1/EyeQ/releases/download/Installer/EyeQ-Installer.msi)
 
-- Download and run the `EyeQ.msi` installer file.
+- Download and run the `EyeQ-Installer.msi` installer file.
 
 ### Method 2: Building from Source
 

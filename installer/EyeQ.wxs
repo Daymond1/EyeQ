@@ -80,6 +80,26 @@
       <Directory Id="StartMenuProgramsFolder" Name="EyeQ" />
     </StandardDirectory>
 
+    <!-- ── Desktop shortcut ────────────────────────────────────────────────── -->
+    <StandardDirectory Id="DesktopFolder">
+      <Component Id="DesktopShortcut" Guid="E4F5A6B7-C8D9-0123-EFAB-345678901234">
+        <Shortcut
+          Id="DesktopSC"
+          Name="EyeQ"
+          Description="QR Code and Barcode Scanner"
+          Target="[INSTALLFOLDER]EyeQ.exe"
+          Icon="AppIcon.ico"
+          WorkingDirectory="INSTALLFOLDER" />
+        <RegistryValue
+          Root="HKCU"
+          Key="Software\EyeQ"
+          Name="DesktopInstalled"
+          Type="integer"
+          Value="1"
+          KeyPath="yes" />
+      </Component>
+    </StandardDirectory>
+
     <!-- ── Icon for shortcuts ─────────────────────────────────────────────── -->
     <Icon Id="AppIcon.ico" SourceFile="..\bin\Release\ico.ico" />
 
@@ -88,7 +108,18 @@
       <ComponentRef Id="MainExecutable" />
       <ComponentRef Id="ZXingDeps" />
       <ComponentRef Id="StartMenuShortcut" />
+      <ComponentRef Id="DesktopShortcut" />
     </Feature>
+
+    <!-- ── Custom action to launch application after installation ────────── -->
+    <CustomAction Id="LaunchApplication"
+                  FileRef="EyeQExe"
+                  ExeCommand=""
+                  Return="asyncNoWait" />
+
+    <InstallExecuteSequence>
+      <Custom Action="LaunchApplication" After="InstallFinalize" Condition="NOT Installed AND NOT REMOVE" />
+    </InstallExecuteSequence>
 
     <!-- ── UI: minimal progress dialog ───────────────────────────────────── -->
     <WixVariable Id="WixUILicenseRtf" Value="license.rtf" />

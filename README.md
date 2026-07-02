@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="https://raw.githubusercontent.com/Daymond1/EyeQ/main/EyeQ/Resources/icon.ico" width="80" alt="EyeQ Logo" />
+<img src="ico.ico" width="80" alt="EyeQ Logo" />
 
 # EyeQ
 

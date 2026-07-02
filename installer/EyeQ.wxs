@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  EyeQ MSI Installer — WiX 4 / WiX 7 source file
+  Build with: wix build EyeQ.wxs -o installer\EyeQ-Installer.msi
+-->
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+
+  <Package
+    Name="EyeQ"
+    Manufacturer="Daymond1"
+    Version="2.0.0"
+    UpgradeCode="A1B2C3D4-E5F6-7890-ABCD-EF1234567890"
+    Language="1033"
+    Codepage="1252"
+    InstallerVersion="500"
+    Compressed="yes">
+
+    <!-- Allow upgrades and prevent downgrades -->
+    <MajorUpgrade
+      DowngradeErrorMessage="A newer version of EyeQ is already installed."
+      Schedule="afterInstallInitialize" />
+
+    <!-- Embed all files in the MSI -->
+    <MediaTemplate EmbedCab="yes" />
+
+    <!-- ── Installation directory ──────────────────────────────────────────── -->
+    <StandardDirectory Id="ProgramFiles6432Folder">
+      <Directory Id="INSTALLFOLDER" Name="EyeQ">
+
+        <!-- ── Main application files ──────────────────────────────────────── -->
+        <Component Id="MainExecutable" Guid="B1C2D3E4-F5A6-7890-BCDE-F12345678901">
+          <File Id="EyeQExe"
+                Source="..\bin\Release\EyeQ.exe"
+                Name="EyeQ.exe"
+                KeyPath="yes" />
+          <File Id="EyeQConfig"
+                Source="..\bin\Release\EyeQ.exe.config"
+                Name="EyeQ.exe.config" />
+          <File Id="AppIcon"
+                Source="..\bin\Release\ico.ico"
+                Name="ico.ico" />
+        </Component>
+
+        <!-- ── ZXing.Net dependencies ──────────────────────────────────────── -->
+        <Component Id="ZXingDeps" Guid="C2D3E4F5-A6B7-8901-CDEF-123456789012">
+          <File Id="ZxingDll"
+                Source="..\bin\Release\zxing.dll"
+                Name="zxing.dll"
+                KeyPath="yes" />
+          <File Id="ZxingPresentationDll"
+                Source="..\bin\Release\zxing.presentation.dll"
+                Name="zxing.presentation.dll" />
+        </Component>
+
+        <!-- ── Start Menu shortcut ────────────────────────────────────────── -->
+        <Component Id="StartMenuShortcut" Guid="D3E4F5A6-B7C8-9012-DEFA-234567890123">
+          <Shortcut
+            Id="StartMenuSC"
+            Name="EyeQ"
+            Description="QR Code and Barcode Scanner"
+            Target="[INSTALLFOLDER]EyeQ.exe"
+            Icon="AppIcon.ico"
+            WorkingDirectory="INSTALLFOLDER" />
+          <RemoveFolder Id="RemoveStartMenu"
+                        On="uninstall" />
+          <RegistryValue
+            Root="HKCU"
+            Key="Software\EyeQ"
+            Name="StartMenuInstalled"
+            Type="integer"
+            Value="1"
+            KeyPath="yes" />
+        </Component>
+
+      </Directory>
+    </StandardDirectory>
+
+    <!-- Start Menu Programs folder -->
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Directory Id="StartMenuProgramsFolder" Name="EyeQ" />
+    </StandardDirectory>
+
+    <!-- ── Icon for shortcuts ─────────────────────────────────────────────── -->
+    <Icon Id="AppIcon.ico" SourceFile="..\bin\Release\ico.ico" />
+
+    <!-- ── Feature tree ───────────────────────────────────────────────────── -->
+    <Feature Id="ProductFeature" Title="EyeQ" Level="1">
+      <ComponentRef Id="MainExecutable" />
+      <ComponentRef Id="ZXingDeps" />
+      <ComponentRef Id="StartMenuShortcut" />
+    </Feature>
+
+    <!-- ── UI: minimal progress dialog ───────────────────────────────────── -->
+    <WixVariable Id="WixUILicenseRtf" Value="license.rtf" />
+    <UI Id="WixUI_Minimal">
+      <UIRef Id="WixUI_Minimal" />
+    </UI>
+
+  </Package>
+</Wix>

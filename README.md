@@ -71,7 +71,7 @@ EyeQ lives quietly in your Windows system tray and lets you scan **any QR code o
 ### Method 1 — MSI Installer (Recommended)
 
 1. Go to the [**Releases page**](https://github.com/Daymond1/EyeQ/releases).
-2. Download the latest `EyeQ-setup.msi`.
+2. Download the latest `EyeQ-Installer.msi`.
 3. Run the installer and follow the on-screen steps.
 4. EyeQ will start automatically and appear in your system tray.
 
